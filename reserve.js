@@ -9,11 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const movie = movies.find(m => m.title === movieTitle);
 
     if (movie) {
-        seatsStatusElement.innerHTML = `
-            <p><span class="green">Green</span>: ${movie.seatsAvailable} seats left</p>
-            <p><span class="red">Red</span>: ${movie.totalSeats - movie.seatsAvailable} seats taken</p>
-        `;
-        generateSeatMap(movie);
+        if (movie.seatsAvailable === 0) {
+            seatsStatusElement.innerHTML = `<p class="sold-out">Sold Out</p>`;
+        } else {
+            seatsStatusElement.innerHTML = `
+                <p><span class="green">Green</span>: ${movie.seatsAvailable} seats left</p>
+                <p><span class="red">Red</span>: ${movie.totalSeats - movie.seatsAvailable} seats taken</p>
+            `;
+            generateSeatMap(movie);
+        }
     }
 });
 
@@ -27,8 +31,9 @@ function generateSeatMap(movie) {
         const seatElement = document.createElement('div');
         seatElement.classList.add('seat');
         seatElement.dataset.seatNumber = i + 1;
+        seatElement.textContent = i + 1; // Display seat number
 
-        if (i < movie.totalSeats - movie.seatsAvailable) {
+        if (movie.reservedSeats && movie.reservedSeats.includes(i + 1)) {
             seatElement.classList.add('reserved');
         } else {
             seatElement.classList.add('available');
@@ -37,7 +42,7 @@ function generateSeatMap(movie) {
         seatElement.addEventListener('click', function() {
             if (!seatElement.classList.contains('reserved')) {
                 seatElement.classList.toggle('selected');
-                toggleSeatSelection(seatElement.dataset.seatNumber);
+                toggleSeatSelection(parseInt(seatElement.dataset.seatNumber));
             }
         });
 
@@ -72,6 +77,10 @@ function confirmReservation() {
             return;
         }
         movie.seatsAvailable -= selectedSeats.length;
+        if (!movie.reservedSeats) {
+            movie.reservedSeats = [];
+        }
+        movie.reservedSeats = movie.reservedSeats.concat(selectedSeats);
         saveMovies(movies);
         alert('Reservation successful!');
         window.location.href = 'user.html';
